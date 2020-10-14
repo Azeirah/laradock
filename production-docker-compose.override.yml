@@ -1,0 +1,64 @@
+version: '3'
+
+networks:
+    default:
+        external:
+            name: nginx-proxy
+
+volumes:
+    proxy-cert:
+    proxy-vhost:
+    proxy-html:
+
+services:
+    mail:
+        image: juanluisbaptiste/postfix:latest
+        restart: always
+        environment:
+            - SMTP_SERVER=vps.transip.email
+            - SMTP_PORT=587
+            - SMTP_USERNAME=azeirah@vps.transip.email
+            - SMTP_PASSWORD=EEMThbGxesNtFRsf
+            - SERVER_HOSTNAME=smgmusicdisplay.com
+        networks:
+            - backend
+
+    nginx-proxy:
+        image: jwilder/nginx-proxy
+        container_name: smgmusicdisplay-nginx-proxy
+        ports:
+            - "443:443"
+            - "80:80"
+        volumes:
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+            - proxy-cert:/etc/nginx/certs
+            - proxy-vhost:/etc/nginx/vhost.d
+            - proxy-html:/usr/share/nginx/html
+        networks:
+            - backend
+            - default
+        restart: always
+
+    nginx-proxy-letsencrypt:
+        image: jrcs/letsencrypt-nginx-proxy-companion
+        volumes:
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - proxy-cert:/etc/nginx/certs
+            - proxy-vhost:/etc/nginx/vhost.d
+            - proxy-html:/usr/share/nginx/html
+        environment:
+            NGINX_PROXY_CONTAINER: smgmusicdisplay-nginx-proxy
+            DEFAULT_EMAIL: 'mail@laura.fm'
+        networks:
+            - default
+        restart: always
+
+    nginx:
+        expose:
+            - 80
+        environment:
+            VIRTUAL_HOST: smgmusicdisplay.com
+            LETSENCRYPT_HOST: smgmusicdisplay.com
+        networks:
+            - default
