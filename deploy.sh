@@ -8,14 +8,22 @@ if [[ -n $development ]]; then
 else
     FILES="-f basis-docker-compose.yml -f production-docker-compose.override.yml"
 fi
+
+# build the dependency installation container
 docker-compose $FILES build --no-cache code
-docker-compose $FILES exec workspace php artisan down
-docker-compose $FILES exec workspace php artisan cache:clear
+
+# prepare for maintenance
+docker-compose $FILES exec --user=laradock workspace php artisan down
+docker-compose $FILES exec --user=laradock workspace php artisan optimize:clear
+
+# install dependencies
 docker-compose $FILES up code
-docker-compose $FILES exec workspace php artisan optimize
-if [[ -n $development ]]; then
-    make development-up
-else
-    make up
-fi
-docker-compose $FILES exec workspace php artisan up
+
+# update the code
+cd ..
+git pull
+cd laradock
+
+# start server again
+docker-compose $FILES exec --user=laradock workspace php artisan optimize
+docker-compose $FILES exec --user=laradock workspace php artisan up
