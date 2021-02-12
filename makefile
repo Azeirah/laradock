@@ -14,6 +14,9 @@ development-up:
 development-build:
 	docker-compose -f basis-docker-compose.yml -f development-docker-compose.override.yml build -d $(server) $(database) $(dev_services)
 
+development-build-php-version-upgrade:
+	docker-compose -f basis-docker-compose.yml -f development-docker-compose.override.yml build --no-cache php-fpm workspace
+
 up:
 	docker-compose -f basis-docker-compose.yml -f production-docker-compose.override.yml up -d $(server) $(database) $(services)
 
